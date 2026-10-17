@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sanctuary</title>
+<meta name="theme-color" content="#050816">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E✨%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..500;1,9..144,300..500&family=Hanken+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: {
+    serif: ['Fraunces', 'Iowan Old Style', 'Georgia', 'serif'],
+    sans: ['Hanken Grotesk', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif']
+  } } } };
+</script>
+<style>
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden; color: #dfe6ff;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 118%, rgba(48,70,160,.38) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 15% 0%, rgba(70,40,120,.18) 0%, transparent 70%),
+      linear-gradient(180deg, #02030a 0%, #060a1e 55%, #0a1230 100%);
+    background-attachment: fixed;
+  }
+  #stars, #lines, #mist { position: fixed; pointer-events: none; z-index: 0; }
+  #stars, #lines { inset: 0; width: 100%; height: 100%; }
+  .star { position: absolute; border-radius: 50%; background: #eaf0ff; opacity: .15; animation: twinkle var(--d,6s) ease-in-out var(--l,0s) infinite; }
+  @keyframes twinkle { 0%,100% { opacity: .12; transform: scale(.8); } 50% { opacity: var(--o,.9); transform: scale(1.15); } }
+  @keyframes fadeIn { from { opacity: 0; } }
+
+  /* Constellation lines between golden stars */
+  .cline { stroke: rgba(255,215,120,.24); stroke-width: 1; vector-effect: non-scaling-stroke; animation: fadeIn 2.4s ease both; }
+
+  /* Calm mist where raindrops settle */
+  #mist { left: 0; right: 0; bottom: 0; height: 34vh; opacity: var(--m,.25); transition: opacity 3.5s ease;
+    background: linear-gradient(to top, rgba(88,80,236,.4), rgba(49,46,129,.17) 48%, transparent); }
+  #mist i { position: absolute; bottom: -2rem; width: 62vw; height: 11rem; border-radius: 9999px; background: rgba(99,102,241,.22);
+    filter: blur(48px); animation: mist 28s ease-in-out infinite alternate; }
+  #mist i:nth-child(1) { left: -18vw; } #mist i:nth-child(2) { left: 30vw; animation-duration: 36s; animation-delay: -9s; } #mist i:nth-child(3) { left: 62vw; animation-duration: 32s; animation-delay: -17s; }
+  @keyframes mist { to { transform: translateX(10vw) scaleY(1.25); } }
+
+  /* Input */
+  .halo { animation: breathe 7s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .95; transform: scale(1.04); } }
+  #memory::placeholder { color: rgba(190,205,255,.5); font-style: italic; }
+  .field { transition: box-shadow .5s, border-color .5s, background-color .5s; }
+  .field:focus-within { border-color: rgba(160,190,255,.45); background-color: rgba(18,26,62,.62);
+    box-shadow: 0 0 0 1px rgba(160,190,255,.12), 0 0 36px 2px rgba(110,150,255,.25), 0 0 110px 10px rgba(110,120,255,.14); }
+
+  /* Particles */
+  .orb { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; z-index: 1; opacity: 0; transition: opacity 1.8s ease; pointer-events: none; }
+  .orb.ready { opacity: 1; }
+  .orb.flying { z-index: 30; }
+  .orb.flying .orb-btn { pointer-events: none; }
+  .orb-btn { all: unset; box-sizing: border-box; display: block; width: 100%; height: 100%; cursor: pointer; pointer-events: auto; border-radius: 50%;
+    animation: drift var(--fd,14s) ease-in-out var(--fl,0s) infinite; }
+  .orb-btn:hover, .orb-btn:focus-visible { animation-play-state: paused; }
+  .orb-btn:focus-visible { outline: 1px dashed rgba(220,230,255,.6); outline-offset: 4px; }
+  @keyframes drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(var(--fx,5px), var(--fy,-7px)); } }
+  .orb svg { display: block; overflow: visible; transform: scale(var(--s,1)); filter: drop-shadow(0 0 5px var(--c));
+    transition: transform .6s cubic-bezier(.2,.8,.2,1), filter .6s; }
+  .orb-btn:hover svg, .orb-btn:focus-visible svg { transform: scale(calc(var(--s,1) * 1.7)); filter: drop-shadow(0 0 13px var(--c)) brightness(1.15); }
+  .win .h { animation: glow 4s ease-in-out var(--fl,0s) infinite; }
+  @keyframes glow { 50% { opacity: .5; } }
+  .orb::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; border: 1px solid var(--c); opacity: 0; pointer-events: none; }
+  .orb.landed::after { animation: ripple 1.8s ease-out; }
+  .loss.landed::after { inset: 20px 6px 4px; border-radius: 50%; }
+  @keyframes ripple { 0% { transform: scale(.6); opacity: .8; } 100% { transform: scale(3.2); opacity: 0; } }
+
+  /* Tooltip */
+  #tip { position: fixed; left: 0; top: 0; z-index: 40; max-width: min(320px, calc(100vw - 24px)); pointer-events: none; opacity: 0;
+    transform: translateY(6px) scale(.97); transition: opacity .35s, transform .35s cubic-bezier(.2,.8,.2,1);
+    padding: 14px 18px 13px; border-radius: 18px; background: linear-gradient(160deg, rgba(24,34,78,.82), rgba(10,15,40,.86));
+    border: 1px solid rgba(170,195,255,.2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 16px 50px rgba(0,0,0,.55), 0 0 40px -6px var(--tc,#8aa4ff); }
+  #tip.show { opacity: 1; transform: none; }
+  #tip-text { overflow-wrap: anywhere; }
+
+  /* Song modal */
+  dialog { color: #e6ebff; }
+  dialog::backdrop { background: rgba(2,3,10,.62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  dialog[open] { animation: pop .45s cubic-bezier(.2,.8,.2,1); }
+  @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+  .mood { transition: all .3s; }
+  .mood[aria-pressed="true"][data-mood="win"] { background: rgba(255,210,80,.14); border-color: rgba(255,210,80,.55); color: #ffe39a; }
+  .mood[aria-pressed="true"][data-mood="loss"] { background: rgba(110,118,255,.2); border-color: rgba(139,147,255,.6); color: #c5caff; }
+  .inp { width: 100%; border-radius: 14px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); padding: 12px 14px; font-size: 16px; color: #eef1ff; outline: none; transition: border-color .3s, box-shadow .3s; }
+  .inp::placeholder { color: rgba(190,205,255,.4); }
+  .inp:focus { border-color: rgba(160,190,255,.5); box-shadow: 0 0 24px rgba(110,150,255,.2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star, .halo, .orb-btn, #mist i, .win .h { animation: none !important; }
+    .star { opacity: .5; } .orb { transition-duration: .01s; }
+  }
+</style>
+</head>
+<body class="font-sans antialiased selection:bg-indigo-400/30">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4"/></filter>
+  <radialGradient id="g-win"><stop offset="0" stop-color="#ffd24a" stop-opacity="1"/><stop offset=".45" stop-color="#ffc233" stop-opacity=".42"/><stop offset="1" stop-color="#ffb000" stop-opacity="0"/></radialGradient>
+  <radialGradient id="c-win"><stop offset="0" stop-color="#fffbe6"/><stop offset=".6" stop-color="#ffd84d"/><stop offset="1" stop-color="#ffb81c"/></radialGradient>
+  <radialGradient id="g-loss"><stop offset="0" stop-color="#6a73ff" stop-opacity=".9"/><stop offset=".5" stop-color="#4f46e5" stop-opacity=".32"/><stop offset="1" stop-color="#4338ca" stop-opacity="0"/></radialGradient>
+  <radialGradient id="c-loss" cx=".4" cy=".35"><stop offset="0" stop-color="#b4bbff"/><stop offset=".6" stop-color="#6366f1"/><stop offset="1" stop-color="#3b2fb0"/></radialGradient>
+</defs></svg>
+
+<div id="stars" aria-hidden="true"></div>
+<svg id="lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+<div id="mist" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="sky" class="fixed inset-0 pointer-events-none" role="list" aria-label="Your memories"></div>
+<div id="yt-wrap" style="position:fixed;left:0;bottom:0;width:200px;height:200px;opacity:.001;pointer-events:none;z-index:-1" aria-hidden="true"><div id="yt"></div></div>
+
+<main class="relative z-10 flex min-h-full items-center justify-center px-5">
+  <form id="form" class="relative w-full max-w-xl" autocomplete="off">
+    <div class="halo pointer-events-none absolute -inset-10 rounded-full bg-indigo-500/20 blur-3xl"></div>
+    <label for="memory" class="sr-only">Capture a micro-win</label>
+    <div class="field relative flex items-center rounded-full border border-white/10 bg-[#0c1233]/50 px-7 py-5 backdrop-blur-xl sm:px-9 sm:py-6">
+      <input id="memory" type="text" maxlength="240" enterkeyhint="send" autofocus placeholder="Capture a micro-win..."
+             class="w-full bg-transparent font-serif font-light italic text-indigo-50 caret-indigo-200 outline-none" style="font-size:max(16px,1.15rem)">
+    </div>
+    <p id="count" class="mt-5 text-center text-sm text-indigo-200/50" aria-live="polite"></p>
+  </form>
+</main>
+
+<dialog id="dlg" class="m-auto w-[min(92vw,30rem)] rounded-3xl border border-white/10 bg-[#0a0f2e]/90 p-0 backdrop-blur-2xl" style="box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 80px -20px rgba(120,130,255,.45)" aria-labelledby="dlg-title">
+  <form id="dform" class="p-6 sm:p-8" novalidate>
+    <h2 id="dlg-title" class="font-serif text-2xl font-light text-indigo-50">Associate a Song</h2>
+    <p id="dlg-memory" class="mt-3 max-h-24 overflow-auto font-serif text-[15px] font-light italic leading-relaxed text-indigo-200/70" style="overflow-wrap:anywhere"></p>
+
+    <div class="mt-5 flex items-center gap-3">
+      <span class="text-sm text-indigo-200/60">Detected on this device:</span>
+      <div class="flex gap-2" role="group" aria-label="Memory type">
+        <button type="button" class="mood rounded-full border border-white/10 px-4 py-1.5 text-sm text-indigo-200/70" data-mood="win" aria-pressed="false">Win</button>
+        <button type="button" class="mood rounded-full border border-white/10 px-4 py-1.5 text-sm text-indigo-200/70" data-mood="loss" aria-pressed="false">Loss</button>
+      </div>
+    </div>
+
+    <label for="s-url" class="mt-6 block text-sm text-indigo-200/70">YouTube link (optional)</label>
+    <input id="s-url" class="inp mt-2" type="text" inputmode="url" placeholder="https://www.youtube.com/watch?v=..." autocapitalize="off" spellcheck="false">
+    <div id="s-found" class="mt-3 hidden items-center gap-3 text-sm text-indigo-200/70"><img id="s-thumb" alt="" class="h-12 w-20 rounded-lg object-cover"><span>Song found. It plays while you hover this memory.</span></div>
+
+    <label for="s-start" class="mt-5 block text-sm text-indigo-200/70">Start time (in seconds)</label>
+    <input id="s-start" class="inp mt-2 w-40" type="text" inputmode="numeric" placeholder="0" autocomplete="off">
+
+    <p id="s-err" class="mt-4 min-h-[1.25rem] text-sm text-rose-300" role="alert"></p>
+    <div class="mt-4 flex items-center justify-end gap-3">
+      <button type="button" id="s-cancel" class="rounded-full px-5 py-2.5 text-sm text-indigo-200/70 transition hover:text-indigo-50">Cancel</button>
+      <button type="submit" class="rounded-full border border-indigo-300/30 bg-indigo-400/20 px-6 py-2.5 text-sm font-medium text-indigo-50 transition hover:bg-indigo-400/30 hover:shadow-[0_0_30px_rgba(129,140,248,.4)]">Release</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="tip" role="tooltip">
+  <p id="tip-text" class="font-serif text-[17px] font-light leading-relaxed text-indigo-50"></p>
+  <p class="mt-2 flex items-center gap-2 text-xs text-indigo-200/60"><span id="tip-dot" class="inline-block h-1.5 w-1.5 shrink-0 rounded-full"></span><span id="tip-date"></span></p>
+  <p id="tip-song" class="mt-1 hidden text-xs text-indigo-200/60"></p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const KEY = 'sanctuary.memories.v2', OLD_KEY = 'sanctuary.memories.v1', NS = 'http://www.w3.org/2000/svg';
+  const COLORS = { win: '#ffd166', loss: '#8b93ff' };
+  const $ = id => document.getElementById(id);
+  const sky = $('sky'), form = $('form'), input = $('memory'), field = form.querySelector('.field'), count = $('count');
+  const tip = $('tip'), tipText = $('tip-text'), tipDate = $('tip-date'), tipDot = $('tip-dot'), tipSong = $('tip-song');
+  const dlg = $('dlg'), dform = $('dform'), sUrl = $('s-url'), sStart = $('s-start'), sErr = $('s-err'), sFound = $('s-found'), sThumb = $('s-thumb');
+  const lines = $('lines'), mist = $('mist');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const easeInOut = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+  /* =============== LOCAL SENTIMENT ENGINE =============== */
+  const NEG = new Set(('lost lose loses losing loss loser bad worse worst sad sadly sadness fail fails failed failing failure broke broken break breaks hurt hurts hurting hate hated hates hating ' +
+    'drop dropped drops ruin ruined ruins cry cried crying cries angry mad furious upset awful terrible horrible miss missed stress stressed stressful anxious anxiety worried worry worrying ' +
+    'lonely tired exhausted drained sick pain painful sucks sucked suck regret regretted ashamed embarrassed fear scared afraid panic depressed depression rejected rejection fired ' +
+    'cancelled canceled stuck useless hopeless disappointed disappointing grief grieve grieving died dead death mess messed wasted burnout crash crashed overwhelmed anger frustrated ' +
+    'frustrating annoyed annoying argument argued fight fought yelled shame guilty guilt unhappy miserable nightmare disaster waste forgot forgotten spilled stolen sorry lonely ' +
+    'cant wrong lied betrayed insecure doubt doubted hopeless helpless numb empty heartbroken breakup bored negative').split(/\s+/));
+  const POS = new Set(('won win wins winning winner proud pride happy happiness glad great good better best love loved loves loving finally passed achieved achievement nailed crushed smashed aced ' +
+    'finished completed done promoted promotion hired grateful thankful thanks thank smile smiled smiling laughed laugh laughing fun enjoyed enjoy awesome amazing wonderful excited calm ' +
+    'peaceful relaxed relieved improved improving progress success successful succeeded celebrate celebrated beautiful kind helped learned fixed solved shipped launched sunny hug hugged ' +
+    'cooked walked exercised brave courage confident hopeful joy joyful delighted fantastic excellent perfect lucky blessed accomplished opened gift cozy treat cheerful').split(/\s+/));
+  const NEGATORS = new Set(['not', 'no', 'never', 'without', 'hardly', 'barely', 'neither', 'nor', 'nothing']);
+  const BOOST = new Set(['very', 'really', 'so', 'super', 'extremely', 'totally', 'completely', 'absolutely', 'truly', 'deeply']);
+  const PIVOT = new Set(['but', 'however', 'though', 'although', 'yet']);
+  const NEG_EMOJI = /[😢😭💔😞😔😩😠😡🤬😤🥀🌧😖😫😟😰😥🙁☹]/gu;
+  const POS_EMOJI = /[🎉🥳❤💛💖😊😄😁🥰😍🌟✨🏆👏🙌💪☀🌈😌🤩😀🙂]/gu;
+
+  function analyze(text) {
+    const clean = text.toLowerCase().replace(/can['’]t/g, 'can not').replace(/won['’]t/g, 'will not').replace(/n['’]t\b/g, ' not').replace(/['’]/g, '');
+    const toks = clean.replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+    let score = (text.match(POS_EMOJI) || []).length - (text.match(NEG_EMOJI) || []).length, weight = 1;
+    toks.forEach((w, i) => {
+      if (PIVOT.has(w)) { weight = 1.4; return; }
+      let v = POS.has(w) ? 1 : NEG.has(w) ? -1 : 0;
+      if (!v) return;
+      if (BOOST.has(toks[i - 1])) v *= 1.5;
+      if (toks.slice(Math.max(0, i - 3), i).some(t => NEGATORS.has(t))) v *= -.8;
+      score += v * weight;
+    });
+    return { score, type: score < 0 ? 'loss' : 'win' };
+  }
+
+  /* =============== YOUTUBE HELPERS =============== */
+  function ytId(raw) {
+    const u = raw.trim();
+    if (/^[\w-]{11}$/.test(u)) return u;
+    let x; try { x = new URL(/^https?:\/\//i.test(u) ? u : 'https://' + u); } catch (e) { return null; }
+    const h = x.hostname.replace(/^(www|m|music)\./, ''); let id = null;
+    if (h === 'youtu.be') id = x.pathname.slice(1).split('/')[0];
+    else if (h === 'youtube.com' || h === 'youtube-nocookie.com') {
+      if (x.pathname === '/watch') id = x.searchParams.get('v');
+      else { const p = x.pathname.split('/'); if (['embed', 'shorts', 'live', 'v'].includes(p[1])) id = p[2]; }
+    }
+    return id && /^[\w-]{11}$/.test(id) ? id : null;
+  }
+  function urlTime(raw) {
+    const m = /[?&#](?:t|start)=([^&#]+)/.exec(raw); if (!m) return 0;
+    const p = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/.exec(m[1]);
+    return p ? (+p[1] || 0) * 3600 + (+p[2] || 0) * 60 + (+p[3] || 0) : 0;
+  }
+  function parseStart(s) {
+    s = s.trim(); if (!s) return 0;
+    if (/^\d+(:\d{1,2}){1,2}$/.test(s)) return s.split(':').reduce((a, n) => a * 60 + +n, 0);
+    return /^\d+(\.\d+)?$/.test(s) ? Math.floor(+s) : NaN;
+  }
+  const fmtTime = s => { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(r).padStart(2, '0'); };
+
+  /* =============== INVISIBLE YOUTUBE PLAYER =============== */
+  let player = null, ready = false, loadingApi = false, want = null, curVid = null, fadeT = 0, noteT = 0;
+  const VOL = 70;
+
+  function ensurePlayer() {
+    if (player || loadingApi) return;
+    loadingApi = true;
+    window.onYouTubeIframeAPIReady = () => {
+      const vars = { controls: 0, disablekb: 1, fs: 0, playsinline: 1, rel: 0, iv_load_policy: 3, modestbranding: 1 };
+      if (/^https?:$/.test(location.protocol)) vars.origin = location.origin;
+      player = new YT.Player('yt', { width: 200, height: 200, playerVars: vars, events: {
+        onReady: () => { ready = true; if (want) play(want); },
+        onStateChange: e => {
+          if (e.data === YT.PlayerState.PLAYING && !want) player.pauseVideo();
+          if (e.data === YT.PlayerState.ENDED && want) play(want);
+        },
+        onAutoplayBlocked: () => note('Your browser blocked autoplay. Click anywhere once, then hover again.'),
+        onError: e => {
+          const c = e.data;
+          if (c === 101 || c === 150) note('That video\u2019s owner does not allow playback outside YouTube.');
+          else if (c === 153 || location.protocol === 'file:') note('YouTube refused the embed. Serve this page from http://localhost (python3 -m http.server) and try again.');
+          else note('That video could not be played. Check that the link is public.');
+        } } });
+    };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => { loadingApi = false; note('Could not reach YouTube. Check your connection.'); };
+    document.head.appendChild(s);
+  }
+  function play(m) {
+    want = m;
+    if (!ready) { ensurePlayer(); return; }
+    const start = m.start || 0;
+    try {
+      player.setVolume(0);
+      if (curVid === m.vid) { player.seekTo(start, true); player.playVideo(); }
+      else { curVid = m.vid; player.loadVideoById({ videoId: m.vid, startSeconds: start }); }
+      clearInterval(fadeT); let v = 0;
+      fadeT = setInterval(() => { v += 10; try { player.setVolume(Math.min(v, VOL)); } catch (e) {} if (v >= VOL) clearInterval(fadeT); }, 60);
+    } catch (e) {}
+  }
+  function stop() {
+    want = null; clearInterval(fadeT);
+    if (ready) { try { player.pauseVideo(); } catch (e) {} }
+  }
+
+  /* =============== STORAGE =============== */
+  let storageOk = true;
+  const valid = m => m && typeof m.text === 'string' && (m.type === 'win' || m.type === 'loss') && Number.isFinite(m.x) && Number.isFinite(m.y) && Number.isFinite(m.ts);
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { const a = JSON.parse(raw); return Array.isArray(a) ? a.filter(valid) : []; }
+      const old = JSON.parse(localStorage.getItem(OLD_KEY) || '[]');   // migrate v1 memories
+      if (!Array.isArray(old)) return [];
+      return old.filter(o => o && typeof o.text === 'string' && Number.isFinite(o.x) && Number.isFinite(o.y) && Number.isFinite(o.ts)).map(o => {
+        const type = analyze(o.text).type;
+        return { id: o.id || String(o.ts), text: o.text, ts: o.ts, type, x: o.x, y: type === 'loss' ? +rand(86, 95).toFixed(2) : Math.min(o.y, 58),
+          vid: null, url: '', start: 0, size: o.size || 1, fd: o.fd || 14, fx: o.fx || 5, fy: o.fy || -7 };
+      });
+    } catch (e) { storageOk = false; return []; }
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(memories)); storageOk = true; } catch (e) { storageOk = false; } }
+  let memories = load();
+
+  /* =============== UI HELPERS =============== */
+  const fmtDate = ts => { const d = new Date(ts);
+    return d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); };
+  function updateCount() {
+    const n = memories.length;
+    count.textContent = !storageOk ? 'Storage is blocked in this browser, so memories will not survive a reload.'
+      : n === 0 ? 'Press Enter to send it into your sky.' : `${n} memor${n === 1 ? 'y' : 'ies'} in your sky. Press Enter to add another.`;
+  }
+  function note(msg) { count.textContent = msg; clearTimeout(noteT); noteT = setTimeout(updateCount, 8000); }
+  function updateMist() { mist.style.setProperty('--m', Math.min(1, .25 + memories.filter(m => m.type === 'loss').length * .14).toFixed(2)); }
+
+  for (let i = 0, n = innerWidth < 640 ? 90 : 170; i < n; i++) {
+    const s = document.createElement('span'), z = Math.random() < .88 ? rand(1, 2.2) : rand(2, 3.4);
+    s.className = 'star';
+    s.style.cssText = `left:${rand(0, 100)}%;top:${rand(0, 100)}%;width:${z}px;height:${z}px;--d:${rand(4, 12).toFixed(2)}s;--l:${(-rand(0, 10)).toFixed(2)}s;--o:${rand(.45, 1).toFixed(2)}`;
+    $('stars').appendChild(s);
+  }
+
+  /* =============== PLACEMENT =============== */
+  function pickSpot(type) {
+    const W = innerWidth, H = innerHeight, fr = form.getBoundingClientRect(), pad = 60;
+    let x = 50, y = 20;
+    for (let i = 0; i < 120; i++) {
+      x = rand(4, 96); y = type === 'win' ? rand(5, 58) : rand(85, 96);
+      const px = x / 100 * W, py = y / 100 * H;
+      if (px > fr.left - pad && px < fr.right + pad && py > fr.top - pad && py < fr.bottom + pad) continue;
+      if (memories.some(m => Math.hypot(m.x / 100 * W - px, m.y / 100 * H - py) < 58)) continue;
+      break;
+    }
+    return { x: +x.toFixed(2), y: +y.toFixed(2) };
+  }
+
+  /* =============== PARTICLES =============== */
+  function makeOrb(m) {
+    const loss = m.type === 'loss', el = document.createElement('div');
+    el.className = 'orb ' + m.type; el.setAttribute('role', 'listitem');
+    el.style.cssText = `left:${m.x}%;top:${m.y}%;--c:${COLORS[m.type]};--fd:${m.fd}s;--fl:${(-m.fd * Math.random()).toFixed(2)}s;--fx:${m.fx}px;--fy:${m.fy}px`;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'orb-btn';
+    btn.setAttribute('aria-label', (loss ? 'Loss' : 'Win') + ' from ' + fmtDate(m.ts) + ': ' + m.text);
+    btn.innerHTML = `<svg viewBox="0 0 44 44" width="44" height="44" style="--s:${m.size}" aria-hidden="true">` + (loss
+      ? `<circle class="h" cx="22" cy="26" r="17" fill="url(#g-loss)" filter="url(#blur)"/><path d="M22 7C22 7 32.5 20 32.5 27.5a10.5 10.5 0 0 1-21 0C11.5 20 22 7 22 7Z" fill="url(#c-loss)"/><ellipse cx="17.5" cy="27" rx="1.8" ry="3.4" fill="#fff" opacity=".5" transform="rotate(20 17.5 27)"/>`
+      : `<circle class="h" cx="22" cy="22" r="20" fill="url(#g-win)" filter="url(#blur)"/><circle cx="22" cy="22" r="6" fill="url(#c-win)"/>`) + '</svg>';
+    el.appendChild(btn);
+    btn.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') engage(btn, m); });
+    btn.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') release(); });
+    btn.addEventListener('focus', () => engage(btn, m));
+    btn.addEventListener('blur', release);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (e.pointerType === 'mouse' || e.pointerType === '') return;   // touch / pen: tap toggles
+      activeBtn === btn ? release() : engage(btn, m);
+    });
+    return el;
+  }
+
+  let activeBtn = null;
+  function engage(btn, m) {
+    activeBtn = btn;
+    tipText.textContent = m.text;
+    tipDate.textContent = (m.type === 'win' ? 'Win' : 'Loss') + ' \u00b7 ' + fmtDate(m.ts);
+    tipDot.style.background = COLORS[m.type];
+    tip.style.setProperty('--tc', COLORS[m.type] + '66');
+    tipSong.classList.toggle('hidden', !m.vid);
+    if (m.vid) tipSong.textContent = '\u266a Playing from ' + fmtTime(m.start || 0);
+    const r = btn.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.min(Math.max(12, r.left + r.width / 2 - w / 2), innerWidth - w - 12) + 'px';
+    let top = r.top - h - 26; if (top < 12) top = r.bottom + 26;
+    tip.style.top = top + 'px';
+    tip.classList.add('show');
+    if (m.vid) play(m);
+  }
+  function release() { tip.classList.remove('show'); activeBtn = null; stop(); }
+  document.addEventListener('click', release);
+  addEventListener('resize', release);
+  addEventListener('keydown', e => { if (e.key === 'Escape') release(); });
+
+  function addLine(m) {
+    const prev = memories.filter(o => o.type === 'win' && o.ts < m.ts);
+    if (!prev.length) return;
+    const W = innerWidth, H = innerHeight; let best = null, bd = Infinity;
+    prev.forEach(o => { const d = Math.hypot((o.x - m.x) * W / 100, (o.y - m.y) * H / 100); if (d < bd) { bd = d; best = o; } });
+    if (bd > Math.max(W, H) * .45) return;
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('class', 'cline');
+    l.setAttribute('x1', best.x); l.setAttribute('y1', best.y); l.setAttribute('x2', m.x); l.setAttribute('y2', m.y);
+    lines.appendChild(l);
+  }
+  function land(el, m) {
+    el.classList.remove('flying'); el.classList.add('landed');
+    if (m.type === 'win') addLine(m); else updateMist();
+  }
+
+  /* Wins rise and sway into the constellation; losses fall slowly and settle in the mist */
+  function fly(el, m) {
+    const fr = form.getBoundingClientRect(), loss = m.type === 'loss';
+    const tx = m.x / 100 * innerWidth, ty = m.y / 100 * innerHeight;
+    const sx = fr.left + fr.width * rand(.3, .7), sy = loss ? fr.bottom - 8 : fr.top + 8;
+    const p0 = { x: sx - tx, y: sy - ty }, span = Math.hypot(p0.x, p0.y) || 1, ph = rand(0, Math.PI * 2), N = 56, frames = [];
+    const p1 = { x: p0.x * .75 + rand(-.5, .5) * span * .4, y: p0.y * .6 - rand(20, 80) };
+    const p2 = { x: p0.x * .25 + rand(-.4, .4) * span * .3, y: p0.y * .1 - rand(0, 40) };
+    for (let i = 0; i <= N; i++) {
+      const raw = i / N; let x, y, s;
+      if (loss) {
+        const t = Math.pow(raw, 1.7);
+        x = p0.x * (1 - t) + Math.sin(raw * 7 + ph) * 14 * (1 - raw); y = p0.y * (1 - t);
+        s = .4 + .6 * Math.min(raw * 4, 1);
+      } else {
+        const t = easeInOut(raw), u = 1 - t, d = Math.sin(raw * Math.PI);
+        x = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + Math.sin(raw * 11 + ph) * 10 * d;
+        y = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + Math.cos(raw * 9 + ph) * 10 * d;
+        s = raw > .8 ? 1.2 - .2 * ((raw - .8) / .2) : .35 + .85 * Math.sin(Math.min(raw * 4, 1) * Math.PI / 2);
+      }
+      frames.push({ offset: raw, translate: `${x.toFixed(1)}px ${y.toFixed(1)}px`, scale: s.toFixed(3), opacity: Math.min(1, raw * 7).toFixed(2) });
+    }
+    el.classList.add('flying');
+    const dur = loss ? Math.min(7200, 4500 + span * 1.2) : Math.min(5200, 3000 + span * 2);
+    const a = el.animate(frames, { duration: dur, easing: 'linear' });
+    a.onfinish = a.oncancel = () => land(el, m);
+  }
+
+  function restore() {
+    const frag = document.createDocumentFragment(), els = memories.map(m => { const el = makeOrb(m); frag.appendChild(el); return el; });
+    sky.appendChild(frag);
+    memories.forEach(m => { if (m.type === 'win') addLine(m); });
+    updateMist();
+    requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el, i) => {
+      el.style.transitionDelay = reduceMotion ? '0s' : Math.min(i * 80, 2600) + 'ms'; el.classList.add('ready');
+    })));
+    if (memories.some(m => m.vid)) ensurePlayer();
+  }
+
+  /* =============== CAPTURE FLOW =============== */
+  let pendingText = '', mood = 'win';
+  function setMood(t) { mood = t; dform.querySelectorAll('.mood').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mood === t))); }
+  dform.querySelectorAll('.mood').forEach(b => b.addEventListener('click', () => setMood(b.dataset.mood)));
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = input.value.trim(); if (!text) return;
+    pendingText = text;
+    $('dlg-memory').textContent = '\u201c' + text + '\u201d';
+    setMood(analyze(text).type);
+    sUrl.value = ''; sStart.value = ''; delete sStart.dataset.touched; sErr.textContent = ''; sFound.classList.add('hidden'); sFound.classList.remove('flex');
+    dlg.showModal(); sUrl.focus();
+  });
+  sStart.addEventListener('input', () => { sStart.dataset.touched = '1'; });
+  sUrl.addEventListener('input', () => {
+    const id = ytId(sUrl.value); sErr.textContent = '';
+    sFound.classList.toggle('hidden', !id); sFound.classList.toggle('flex', !!id);
+    if (id) { sThumb.src = `https://i.ytimg.com/vi/${id}/mqdefault.jpg`; if (!sStart.dataset.touched) { const t = urlTime(sUrl.value); sStart.value = t ? String(t) : ''; } }
+  });
+  $('s-cancel').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => input.focus());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+  dform.addEventListener('submit', e => {
+    e.preventDefault();
+    const url = sUrl.value.trim(); let vid = null, start = 0;
+    if (url) {
+      vid = ytId(url);
+      if (!vid) { sErr.textContent = 'That does not look like a YouTube link. Paste a youtube.com or youtu.be URL.'; sUrl.focus(); return; }
+      start = parseStart(sStart.value);
+      if (Number.isNaN(start)) { sErr.textContent = 'Start time should be seconds, like 75, or m:ss, like 1:15.'; sStart.focus(); return; }
+    }
+    dlg.close();
+    release();
+    const loss = mood === 'loss', spot = pickSpot(mood);
+    const m = { id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(16).slice(2), text: pendingText, ts: Date.now(),
+      type: mood, x: spot.x, y: spot.y, vid, url: vid ? url : '', start,
+      size: +rand(.8, 1.3).toFixed(2), fd: +(loss ? rand(18, 26) : rand(10, 20)).toFixed(1),
+      fx: loss ? Math.round(rand(-2, 2)) : Math.round(rand(-8, 8)), fy: loss ? Math.round(rand(-3, 3)) : Math.round(rand(-10, 10)) };
+    memories.push(m); save();
+    if (vid) {
+      ensurePlayer();   // created inside the user's click so the browser allows later hover playback
+      if (location.protocol === 'file:') note('Heads up: YouTube may block playback on a file:// page. Serving this from http://localhost fixes that.');
+    }
+    const el = makeOrb(m); el.classList.add('ready'); el.style.transitionDelay = '0s'; sky.appendChild(el);
+    if (reduceMotion) { el.classList.add('landed'); land(el, m); } else fly(el, m);
+    input.value = '';
+    if (!vid) updateCount();
+  });
+
+  restore();
+  updateCount();
+})();
+</script>
+</body>
+</html>
